@@ -134,7 +134,7 @@ app.layout = html.Div(children=[
         }
     ),
 
-    html.Div(children='Case estagiário de Data Science - FortBrasil', style={
+    html.Div(children='Case estagiário de Data Science - FortBrasil - Claudemir Woche', style={
         'textAlign': 'center',
         'color': colors['text']
     }),
