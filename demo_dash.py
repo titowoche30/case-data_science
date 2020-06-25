@@ -117,6 +117,8 @@ fig6.update_layout(height=600, width=900,title_text='Taxa de população do Bras
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+server = app.server
+app.title='COVID-19'
 
 colors = {
     'text': 'teal'
@@ -213,4 +215,4 @@ app.layout = html.Div(children=[
 ])
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server()
