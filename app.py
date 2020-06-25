@@ -6,109 +6,112 @@ import dash_core_components as dcc
 import dash_html_components as html
 import os
 
-
-#-----------------------------------------------------------------------------#
 casos_estado = pd.read_csv('data/casos_mortes_por_estado.csv')
 casos_brasil = pd.read_csv('data/casos_brasil_por_data.csv')
-
-states = casos_estado['state'].unique()
-
-fig1 = go.Figure()
-fig1.add_trace(go.Scatter(x=casos_brasil['date'], y=casos_brasil['new_confirmed'].cumsum(),name='Brasil'))
-
-for state in states:
-    cond = casos_estado['state'] == state
-    sub = casos_estado[cond]
-    
-    fig1.add_trace(go.Scatter(x=sub['date'], y=sub['new_confirmed'].cumsum(),name=state))
-
-fig1.update_layout(height=600, width=900,title_text='Casos acumulados de COVID-19 no Brasil',xaxis_title="Datas",
-    yaxis_title="Número de Casos",xaxis_rangeslider_visible=True)
-#-----------------------------------------------------------------------------#
-
-states = casos_estado['state'].unique()
-
-fig2 = go.Figure()
-
-fig2.add_trace(go.Scatter(x=casos_brasil['date'], y=casos_brasil['new_deaths'].cumsum(),name='Brasil'))
-for state in states:
-    cond = casos_estado['state'] == state
-    sub = casos_estado[cond]
-    
-    fig2.add_trace(go.Scatter(x=sub['date'], y=sub['new_deaths'].cumsum(),name=state))
-
-fig2.update_layout(height=600, width=900,title_text='Mortes acumuladas de COVID-19 no Brasil',xaxis_title="Datas",
-    yaxis_title="Número de Mortes",xaxis_rangeslider_visible=True)
-#-----------------------------------------------------------------------------#
 taxa_mortes = pd.read_csv('data/taxa_de_mortes.csv')
 data = pd.read_csv('data/pre_processed_data.csv')
-states = taxa_mortes['state'].unique()
-
-fig3 = go.Figure()
-fig3.add_trace(go.Bar(x=['Brasil'], y=[data['new_deaths'].sum()/data['new_confirmed'].sum()],name='Brasil'))
-for state in states:
-    cond = taxa_mortes['state'] == state
-    sub = taxa_mortes[cond]
-    
-    fig3.add_trace(go.Bar(x=sub['state'], y=sub['taxa_de_mortes']*100,name=state))
-
-fig3.update_layout(height=600, width=900,title_text='Taxas de mortes de COVID-19 no Brasil por estados',
-    yaxis_title="Taxas de mortes (%)",xaxis_rangeslider_visible=True,xaxis={'categoryorder':'total descending'})
-#-----------------------------------------------------------------------------#
-
-states = casos_estado['state'].unique()
-
-fig4 = go.Figure()
-fig4.add_trace(go.Scatter(x=casos_brasil['date'], y=casos_brasil['new_deaths'].cumsum()/casos_brasil['new_confirmed'].cumsum(),name='Brasil'))
-
-for state in states:
-    cond = casos_estado['state'] == state
-    sub = casos_estado[cond]
-    
-    death_rate = sub['new_deaths'].cumsum()/sub['new_confirmed'].cumsum()
-    
-    fig4.add_trace(go.Scatter(x=sub['date'], y=death_rate*100,name=state))
-
-fig4.update_layout(height=600, width=900,title_text='Taxas de mortes de COVID-19 no Brasil através do tempo',xaxis_title="Datas",
-    yaxis_title="Taxa de Mortes (%)",xaxis_rangeslider_visible=True)
-
-#-----------------------------------------------------------------------------#
 taxa_infec = pd.read_csv('data/taxa_de_infec.csv')
 pop_total=taxa_infec['estimated_population_2019'].sum()
 casos_brasil['taxa_de_infecção'] = casos_brasil['new_confirmed'].cumsum()/pop_total
 
-states = taxa_infec['state'].unique()
+states = casos_estado['state'].unique()
 
-fig5 = go.Figure()
-fig5.add_trace(go.Bar(x=['Brasil'], y=[casos_brasil['new_confirmed'].sum()/pop_total],name='Brasil'))
-for state in states:
-    cond = taxa_infec['state'] == state
-    sub = taxa_infec[cond]
+def plot_line(column,title,xlabel,ylabel):
+    fig = go.Figure()
     
-    fig5.add_trace(go.Bar(x=sub['state'], y=sub['taxa_da_população_infectada']*100,name=state))
+    if column == 'death_rate': 
+        fig.add_trace(go.Scatter(x=casos_brasil['date'], y=casos_brasil['new_deaths'].cumsum()/casos_brasil['new_confirmed'].cumsum(),name='Brasil'))
 
-fig5.update_layout(height=600, width=900,title_text='Taxas de população infectada por COVID-19 no Brasil por estados',
-    yaxis_title="Taxa de infecção (%)",xaxis_rangeslider_visible=True,xaxis={'categoryorder':'total descending'})
-#-----------------------------------------------------------------------------#
+    elif column == 'infec_rate': 
+        fig.add_trace(go.Scatter(x=casos_brasil['date'], y=casos_brasil['taxa_de_infecção'],name='Brasil'))
+        
+    else:
+        fig.add_trace(go.Scatter(x=casos_brasil['date'], y=casos_brasil[column].cumsum(),name='Brasil'))
 
-states = taxa_infec['state'].unique()
+    for state in states:
+        cond = casos_estado['state'] == state
+        sub = casos_estado[cond]
 
-fig6 = go.Figure()
-fig6.add_trace(go.Scatter(x=casos_brasil['date'], y=casos_brasil['taxa_de_infecção'],name='Brasil'))
+        if column == 'death_rate':
+            death_rate = sub['new_deaths'].cumsum()/sub['new_confirmed'].cumsum()
+            fig.add_trace(go.Scatter(x=sub['date'], y=death_rate*100,name=state))
+            
+        elif column == 'infec_rate':
+            cond2 = taxa_infec['state'] == state
+            sub2 = taxa_infec[cond2]
 
-for state in states:
-    cond = casos_estado['state'] == state
-    sub = casos_estado[cond]
+            infec_rate = sub['new_confirmed'].cumsum() / sub2['estimated_population_2019'].values
+            fig.add_trace(go.Scatter(x=sub['date'], y=infec_rate*100,name=state))
+            
+        else:
+            fig.add_trace(go.Scatter(x=sub['date'], y=sub[column].cumsum(),name=state))
+
+    fig.update_layout(height=600, width=900,
+                      title_text=title,
+                      xaxis_title=xlabel,
+                      yaxis_title=ylabel,
+                      xaxis_rangeslider_visible=True)
+
+    return fig
+
+def plot_bar(column,title,ylabel):
+    fig = go.Figure()
     
-    cond2 = taxa_infec['state'] == state
-    sub2 = taxa_infec[cond2]
+    if column == 'death_rate':
+        fig.add_trace(go.Bar(x=['Brasil'], y=[data['new_deaths'].sum()/data['new_confirmed'].sum()],name='Brasil'))
+    elif column == 'infec_rate':
+        fig.add_trace(go.Bar(x=['Brasil'], y=[casos_brasil['new_confirmed'].sum()/pop_total],name='Brasil'))
+
     
-    infec_rate = sub['new_confirmed'].cumsum() / sub2['estimated_population_2019'].values
-    fig6.add_trace(go.Scatter(x=sub['date'], y=infec_rate*100,name=state))
+    for state in states:
+        if column == 'death_rate':
+            cond = taxa_mortes['state'] == state
+            sub = taxa_mortes[cond]
+            
+            fig.add_trace(go.Bar(x=sub['state'], y=sub['taxa_de_mortes']*100,name=state))
+        elif column == 'infec_rate':
+            cond = taxa_infec['state'] == state
+            sub = taxa_infec[cond]
+            
+            fig.add_trace(go.Bar(x=sub['state'], y=sub['taxa_da_população_infectada']*100,name=state))
+    
+    
+    fig.update_layout(height=600, width=900,
+                      title_text=title,
+                      yaxis_title=ylabel,
+                      xaxis_rangeslider_visible=True,
+                      xaxis={'categoryorder':'total descending'})
+    
+    return fig
 
-fig6.update_layout(height=600, width=900,title_text='Taxa de população do Brasil infectada por COVID-19 através do tempo',xaxis_title="Datas",
-    yaxis_title="Taxa de Infecção(%)",xaxis_rangeslider_visible=True)
 
+fig1 = plot_line('new_confirmed',
+                 title='Casos acumulados de COVID-19 no Brasil',
+                 xlabel='Datas',
+                 ylabel='Número de Casos')
+
+fig2 = plot_line('new_deaths',
+                 title='Mortes acumuladas de COVID-19 no Brasil',
+                 xlabel='Datas',
+                 ylabel='Número de Mortes')
+
+fig3 = plot_bar('death_rate',
+                 title='Taxas de mortes de COVID-19 no Brasil por estados',
+                 ylabel='Taxas de mortes (%)')
+
+fig4 = plot_line('death_rate',
+                 title='Taxas de mortes de COVID-19 no Brasil através do tempo',
+                 xlabel='Datas',
+                 ylabel='Taxa de Mortes (%)')
+
+fig5 = plot_bar('infec_rate',
+                 title='Taxas de população infectada por COVID-19 no Brasil por estados',
+                 ylabel='Taxa de infecção (%)')
+
+fig6 = plot_line('infec_rate',
+                 title='Taxa de população do Brasil infectada por COVID-19 através do tempo',
+                 xlabel='Datas',
+                 ylabel='Taxa de Infecção(%)')
 
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
