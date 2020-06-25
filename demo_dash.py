@@ -4,6 +4,7 @@ import plotly.graph_objects as go
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
+import os
 
 
 #-----------------------------------------------------------------------------#
@@ -211,4 +212,4 @@ app.layout = html.Div(children=[
 ])
 
 if __name__ == '__main__':
-    app.run_server()
+    app.run(debug=True, port=int(os.environ.get("PORT", 5000)), host='0.0.0.0')
