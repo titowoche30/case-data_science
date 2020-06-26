@@ -109,7 +109,7 @@ fig5 = plot_bar('infec_rate',
                  ylabel='Taxa de infecção (%)')
 
 fig6 = plot_line('infec_rate',
-                 title='Taxa de população do Brasil infectada por COVID-19 através do tempo',
+                 title='Taxas de população do Brasil infectada por COVID-19 através do tempo',
                  xlabel='Datas',
                  ylabel='Taxa de Infecção(%)')
 
